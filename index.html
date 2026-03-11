@@ -8,6 +8,46 @@
 <title>FinFlow</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
+  /* LOCK SCREEN */
+  #lock-screen {
+    position:fixed; inset:0; z-index:9999;
+    background: #0a0f1e;
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    gap:0; padding:40px 32px;
+  }
+  #lock-screen .lock-logo {
+    font-family:'Syne',sans-serif; font-size:36px; font-weight:800;
+    color:#fff; margin-bottom:6px; letter-spacing:-1px;
+  }
+  #lock-screen .lock-logo span { color:#00e5a0; }
+  #lock-screen .lock-sub {
+    font-size:13px; color:#4a5568; margin-bottom:48px;
+  }
+  .pin-dots { display:flex; gap:16px; margin-bottom:40px; }
+  .pin-dot {
+    width:16px; height:16px; border-radius:50%;
+    border:2px solid #232f45; background:transparent;
+    transition:all 0.2s;
+  }
+  .pin-dot.filled { background:#00e5a0; border-color:#00e5a0; transform:scale(1.2); }
+  .pin-dot.error { background:#ff4d6d; border-color:#ff4d6d; }
+  .keypad { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; width:100%; max-width:280px; }
+  .key-btn {
+    height:72px; border-radius:20px; border:none;
+    background:#111827; color:#fff;
+    font-family:'Syne',sans-serif; font-size:24px; font-weight:700;
+    cursor:pointer; transition:all 0.15s;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    gap:2px;
+  }
+  .key-btn:active { transform:scale(0.92); background:#1a2235; }
+  .key-btn .key-sub { font-size:8px; color:#4a5568; font-family:'DM Sans',sans-serif; letter-spacing:1px; font-weight:500; }
+  .key-btn.key-del { background:#1a2235; font-size:20px; }
+  .key-btn.key-empty { background:transparent; pointer-events:none; }
+  .lock-error { color:#ff4d6d; font-size:13px; margin-top:16px; opacity:0; transition:opacity 0.3s; }
+  .lock-error.show { opacity:1; }
+
   :root {
     --bg: #0a0f1e;
     --surface: #111827;
@@ -359,6 +399,33 @@
 </head>
 <body>
 
+<!-- LOCK SCREEN -->
+<div id="lock-screen">
+  <div class="lock-logo">Fin<span>Flow</span></div>
+  <div class="lock-sub">Digite sua senha para continuar</div>
+  <div class="pin-dots">
+    <div class="pin-dot" id="dot-0"></div>
+    <div class="pin-dot" id="dot-1"></div>
+    <div class="pin-dot" id="dot-2"></div>
+    <div class="pin-dot" id="dot-3"></div>
+  </div>
+  <div class="keypad">
+    <button class="key-btn" onclick="pinPress('1')">1<span class="key-sub"></span></button>
+    <button class="key-btn" onclick="pinPress('2')">2<span class="key-sub">ABC</span></button>
+    <button class="key-btn" onclick="pinPress('3')">3<span class="key-sub">DEF</span></button>
+    <button class="key-btn" onclick="pinPress('4')">4<span class="key-sub">GHI</span></button>
+    <button class="key-btn" onclick="pinPress('5')">5<span class="key-sub">JKL</span></button>
+    <button class="key-btn" onclick="pinPress('6')">6<span class="key-sub">MNO</span></button>
+    <button class="key-btn" onclick="pinPress('7')">7<span class="key-sub">PQRS</span></button>
+    <button class="key-btn" onclick="pinPress('8')">8<span class="key-sub">TUV</span></button>
+    <button class="key-btn" onclick="pinPress('9')">9<span class="key-sub">WXYZ</span></button>
+    <div class="key-btn key-empty"></div>
+    <button class="key-btn" onclick="pinPress('0')">0</button>
+    <button class="key-btn key-del" onclick="pinDel()">⌫</button>
+  </div>
+  <div class="lock-error" id="lock-error">Senha incorreta. Tente novamente.</div>
+</div>
+
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 
@@ -580,6 +647,43 @@
 </div>
 
 <script>
+// ===== PIN LOCK =====
+const CORRECT_PIN = '0711';
+let pinEntry = '';
+function pinPress(digit) {
+  if (pinEntry.length >= 4) return;
+  pinEntry += digit;
+  updateDots();
+  if (pinEntry.length === 4) setTimeout(() => checkPin(), 150);
+}
+function pinDel() {
+  pinEntry = pinEntry.slice(0,-1);
+  updateDots();
+}
+function updateDots() {
+  for (let i=0;i<4;i++) {
+    const dot = document.getElementById('dot-'+i);
+    dot.classList.toggle('filled', i < pinEntry.length);
+    dot.classList.remove('error');
+  }
+}
+function checkPin() {
+  if (pinEntry === CORRECT_PIN) {
+    const ls = document.getElementById('lock-screen');
+    ls.style.opacity = '0';
+    ls.style.transition = 'opacity 0.4s';
+    setTimeout(() => ls.style.display = 'none', 400);
+  } else {
+    for (let i=0;i<4;i++) document.getElementById('dot-'+i).classList.add('error');
+    document.getElementById('lock-error').classList.add('show');
+    setTimeout(() => {
+      pinEntry = '';
+      updateDots();
+      document.getElementById('lock-error').classList.remove('show');
+    }, 1000);
+  }
+}
+
 // ===== DATA =====
 const CATS = [
   {id:'food',icon:'🍔',name:'Alimentação',color:'#ff9f43'},
